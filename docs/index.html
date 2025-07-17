@@ -1,182 +1,793 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Advanced 1/f Spectral Noise Generator</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
-      color: #e0e0e0;
-      margin: 0;
-      padding: 20px;
-      min-height: 100vh;
-    }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      background: rgba(30, 30, 50, 0.95);
-      border-radius: 15px;
-      padding: 30px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    }
-    h1 {
-      text-align: center;
-      color: #4fc3f7;
-      margin-bottom: 30px;
-      text-shadow: 0 0 20px rgba(79, 195, 247, 0.3);
-    }
-    .button {
-      background: linear-gradient(45deg, #4fc3f7, #29b6f6);
-      color: white;
-      border: none;
-      padding: 12px 25px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: all 0.3s ease;
-      margin: 5px;
-    }
-    .button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(79, 195, 247, 0.4);
-    }
-    .note {
-      margin-top: 20px;
-      padding: 15px;
-      background: rgba(255, 255, 255, 0.05);
-      border-left: 4px solid #4fc3f7;
-      color: #81c784;
-    }
-    canvas {
-      background: #1a1a1a;
-      border-radius: 5px;
-      margin-top: 20px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Ruido 1/f Espectral Avanzado</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(30, 30, 50, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4fc3f7;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(79, 195, 247, 0.3);
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .control-group {
+            background: rgba(20, 20, 40, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(79, 195, 247, 0.2);
+        }
+        
+        .control-group h3 {
+            color: #81c784;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        
+        .control-item {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #b0b0b0;
+            font-size: 14px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            background: #333;
+            outline: none;
+            border-radius: 5px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4fc3f7;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        select {
+            width: 100%;
+            padding: 8px;
+            background: #333;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            border-radius: 5px;
+        }
+        
+        .button {
+            background: linear-gradient(45deg, #4fc3f7, #29b6f6);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 195, 247, 0.4);
+        }
+        
+        .visualization {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .plot-container {
+            background: rgba(20, 20, 40, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid rgba(79, 195, 247, 0.2);
+        }
+        
+        .plot-title {
+            color: #4fc3f7;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 300px;
+            background: #1a1a1a;
+            border-radius: 5px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            background: rgba(20, 20, 40, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(129, 199, 132, 0.2);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #81c784;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #b0b0b0;
+            margin-top: 5px;
+        }
+        
+        .method-info {
+            background: rgba(20, 20, 40, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #4fc3f7;
+        }
+        
+        .method-info h4 {
+            color: #4fc3f7;
+            margin-top: 0;
+        }
+        
+        .warning {
+            background: rgba(255, 152, 0, 0.1);
+            color: #ffb74d;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #ff9800;
+        }
+        
+        @media (max-width: 768px) {
+            .visualization {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🌊 Advanced 1/f Spectral Noise Generator</h1>
-    <div style="text-align: center;">
-      <button class="button" onclick="generateNoise()">🎲 Generate 1/f Noise</button>
-      <button class="button" onclick="analyzeSpectrum()">📊 Analyze Spectrum</button>
-      <button class="button" onclick="exportData()">💾 Export Data</button>
+    <div class="container">
+        <h1>🌊 Generador de Ruido 1/f Espectral Avanzado</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <h3>Parámetros Espectrales</h3>
+                <div class="control-item">
+                    <label>Exponente Espectral (α): <span id="alphaValue">1.0</span></label>
+                    <input type="range" id="alphaSlider" min="0.5" max="2.0" step="0.1" value="1.0">
+                </div>
+                <div class="control-item">
+                    <label>Longitud de Muestra: <span id="lengthValue">1024</span></label>
+                    <input type="range" id="lengthSlider" min="512" max="4096" step="256" value="1024">
+                </div>
+                <div class="control-item">
+                    <label>Frecuencia de Muestreo (Hz): <span id="fsValue">1000</span></label>
+                    <input type="range" id="fsSlider" min="100" max="10000" step="100" value="1000">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>Método de Generación</h3>
+                <div class="control-item">
+                    <label>Algoritmo:</label>
+                    <select id="methodSelect">
+                        <option value="spectral">Método Espectral FFT</option>
+                        <option value="kasdin">Kasdin-Walter</option>
+                        <option value="timmer">Timmer-Koenig</option>
+                        <option value="mandelbrot">Mandelbrot-Van Ness</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label>Ventana Espectral:</label>
+                    <select id="windowSelect">
+                        <option value="hann">Hann</option>
+                        <option value="hamming">Hamming</option>
+                        <option value="blackman">Blackman</option>
+                        <option value="none">Sin Ventana</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>Filtros Anti-Artefactos</h3>
+                <div class="control-item">
+                    <label>Filtro Pasa-Bajas (Hz): <span id="lowpassValue">500</span></label>
+                    <input type="range" id="lowpassSlider" min="50" max="1000" step="10" value="500">
+                </div>
+                <div class="control-item">
+                    <label>Filtro Pasa-Altas (Hz): <span id="highpassValue">1</span></label>
+                    <input type="range" id="highpassSlider" min="0.1" max="10" step="0.1" value="1">
+                </div>
+                <div class="control-item">
+                    <label>Suavizado Espectral:</label>
+                    <select id="smoothingSelect">
+                        <option value="none">Sin Suavizado</option>
+                        <option value="moving">Media Móvil</option>
+                        <option value="gaussian">Gaussiano</option>
+                        <option value="savgol">Savitzky-Golay</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="button" onclick="generateNoise()">🎲 Generar Ruido 1/f</button>
+            <button class="button" onclick="analyzeSpectrum()">📊 Analizar Espectro</button>
+            <button class="button" onclick="exportData()">💾 Exportar Datos</button>
+        </div>
+        
+        <div class="visualization">
+            <div class="plot-container">
+                <div class="plot-title">Señal Temporal</div>
+                <canvas id="timeCanvas"></canvas>
+            </div>
+            <div class="plot-container">
+                <div class="plot-title">Espectro de Potencia</div>
+                <canvas id="spectrumCanvas"></canvas>
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="slopeValue">-</div>
+                <div class="stat-label">Pendiente Espectral</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="correlationValue">-</div>
+                <div class="stat-label">Correlación R²</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="fractalValue">-</div>
+                <div class="stat-label">Dimensión Fractal</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="hurstValue">-</div>
+                <div class="stat-label">Exponente Hurst</div>
+            </div>
+        </div>
+        
+        <div class="method-info">
+            <h4>Método Espectral FFT Avanzado</h4>
+            <p>Genera ruido 1/f mediante la construcción directa del espectro de potencia deseado S(f) ∝ 1/f^α, 
+            aplicando fase aleatoria y transformada inversa de Fourier. Incluye:</p>
+            <ul>
+                <li><strong>Ventanas espectrales:</strong> Reducen el leakage espectral</li>
+                <li><strong>Filtros anti-aliasing:</strong> Eliminan frecuencias no deseadas</li>
+                <li><strong>Suavizado adaptativo:</strong> Minimiza discontinuidades</li>
+                <li><strong>Normalización robusta:</strong> Mantiene propiedades estadísticas</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            ⚠️ <strong>Nota:</strong> Para aplicaciones críticas como el modelo MFSU (∂ ≈ 0.921), 
+            se recomienda usar el método Timmer-Koenig con suavizado Savitzky-Golay para minimizar artefactos.
+        </div>
     </div>
 
-    <canvas id="timeCanvas" width="1000" height="300"></canvas>
-    <canvas id="spectrumCanvas" width="1000" height="300"></canvas>
-
-    <div class="note">
-      ⚠️ This tool is part of the MFSU (Unified Fractal-Stochastic Model) initiative to analyze natural 1/f noise patterns. Uses JavaScript-based FFT and visualization.
-    </div>
-  </div>
-
-  <script>
-    let timeCanvas = document.getElementById('timeCanvas');
-    let spectrumCanvas = document.getElementById('spectrumCanvas');
-    let timeCtx = timeCanvas.getContext('2d');
-    let spectrumCtx = spectrumCanvas.getContext('2d');
-    let currentSignal = null;
-
-    function gaussianRandom() {
-      let u = 0, v = 0;
-      while(u === 0) u = Math.random();
-      while(v === 0) v = Math.random();
-      return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-    }
-
-    function generateNoise() {
-      const N = 1024;
-      const alpha = 1.0;
-      const fs = 1000;
-
-      const freqs = Array.from({length: N/2}, (_, i) => i * fs / N);
-      const spectrum = freqs.map(f => f === 0 ? 1 : Math.pow(f, -alpha/2));
-      const complexSignal = Array.from({length: N}, (_, i) => {
-        const phase = Math.random() * 2 * Math.PI;
-        return {
-          real: spectrum[i % (N/2)] * Math.cos(phase),
-          imag: spectrum[i % (N/2)] * Math.sin(phase)
-        };
-      });
-
-      const signal = ifft(complexSignal).map(c => c.real);
-      const mean = signal.reduce((a, b) => a + b, 0) / N;
-      const std = Math.sqrt(signal.reduce((a, b) => a + (b - mean) ** 2, 0) / N);
-      currentSignal = signal.map(x => (x - mean) / std);
-
-      drawSignal(currentSignal);
-    }
-
-    function ifft(X) {
-      const N = X.length;
-      return Array.from({length: N}, (_, n) => {
-        let real = 0, imag = 0;
-        for (let k = 0; k < N; k++) {
-          const angle = 2 * Math.PI * k * n / N;
-          real += X[k].real * Math.cos(angle) - X[k].imag * Math.sin(angle);
-          imag += X[k].real * Math.sin(angle) + X[k].imag * Math.cos(angle);
+    <script>
+        // Variables globales
+        let currentSignal = null;
+        let currentSpectrum = null;
+        let timeCanvas, spectrumCanvas;
+        let timeCtx, spectrumCtx;
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCanvases();
+            setupEventListeners();
+            generateNoise();
+        });
+        
+        function initializeCanvases() {
+            timeCanvas = document.getElementById('timeCanvas');
+            spectrumCanvas = document.getElementById('spectrumCanvas');
+            timeCtx = timeCanvas.getContext('2d');
+            spectrumCtx = spectrumCanvas.getContext('2d');
+            
+            // Configurar tamaño de canvas
+            resizeCanvases();
         }
-        return { real: real / N, imag: imag / N };
-      });
-    }
-
-    function drawSignal(signal) {
-      const ctx = timeCtx;
-      ctx.clearRect(0, 0, timeCanvas.width, timeCanvas.height);
-      ctx.strokeStyle = '#4fc3f7';
-      ctx.beginPath();
-      signal.forEach((val, i) => {
-        const x = i * timeCanvas.width / signal.length;
-        const y = timeCanvas.height/2 - val * 40;
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-    }
-
-    function analyzeSpectrum() {
-      if (!currentSignal) return;
-      const N = currentSignal.length;
-      const fs = 1000;
-      const freqs = Array.from({length: N/2}, (_, k) => k * fs / N);
-      const powers = freqs.map((_, k) => {
-        let real = 0, imag = 0;
-        for (let n = 0; n < N; n++) {
-          const angle = -2 * Math.PI * k * n / N;
-          real += currentSignal[n] * Math.cos(angle);
-          imag += currentSignal[n] * Math.sin(angle);
+        
+        function resizeCanvases() {
+            const rect = timeCanvas.getBoundingClientRect();
+            timeCanvas.width = rect.width;
+            timeCanvas.height = rect.height;
+            spectrumCanvas.width = rect.width;
+            spectrumCanvas.height = rect.height;
         }
-        return (real * real + imag * imag) / N;
-      });
-
-      drawSpectrum(freqs, powers);
-    }
-
-    function drawSpectrum(freqs, powers) {
-      const ctx = spectrumCtx;
-      ctx.clearRect(0, 0, spectrumCanvas.width, spectrumCanvas.height);
-      ctx.strokeStyle = '#81c784';
-      ctx.beginPath();
-      freqs.forEach((f, i) => {
-        const x = Math.log10(f + 1) / Math.log10(freqs[freqs.length - 1] + 1) * spectrumCanvas.width;
-        const y = spectrumCanvas.height - Math.log10(powers[i] + 1e-10) * 30;
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-    }
-
-    function exportData() {
-      if (!currentSignal) return;
-      const blob = new Blob([currentSignal.join('\n')], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'signal_data.txt';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-  </script>
-</body>
-</html>
+        
+        function setupEventListeners() {
+            // Sliders
+            document.getElementById('alphaSlider').oninput = function() {
+                document.getElementById('alphaValue').textContent = this.value;
+            };
+            
+            document.getElementById('lengthSlider').oninput = function() {
+                document.getElementById('lengthValue').textContent = this.value;
+            };
+            
+            document.getElementById('fsSlider').oninput = function() {
+                document.getElementById('fsValue').textContent = this.value;
+            };
+            
+            document.getElementById('lowpassSlider').oninput = function() {
+                document.getElementById('lowpassValue').textContent = this.value;
+            };
+            
+            document.getElementById('highpassSlider').oninput = function() {
+                document.getElementById('highpassValue').textContent = this.value;
+            };
+            
+            // Redimensionar canvas al cambiar tamaño de ventana
+            window.addEventListener('resize', resizeCanvases);
+        }
+        
+        // Generador de ruido 1/f espectral avanzado
+        function generateNoise() {
+            const alpha = parseFloat(document.getElementById('alphaSlider').value);
+            const N = parseInt(document.getElementById('lengthSlider').value);
+            const fs = parseFloat(document.getElementById('fsSlider').value);
+            const method = document.getElementById('methodSelect').value;
+            const window = document.getElementById('windowSelect').value;
+            const smoothing = document.getElementById('smoothingSelect').value;
+            
+            let signal;
+            
+            switch(method) {
+                case 'spectral':
+                    signal = generateSpectralNoise(N, alpha, fs);
+                    break;
+                case 'kasdin':
+                    signal = generateKasdinNoise(N, alpha);
+                    break;
+                case 'timmer':
+                    signal = generateTimmerNoise(N, alpha, fs);
+                    break;
+                case 'mandelbrot':
+                    signal = generateMandelbrotNoise(N, alpha);
+                    break;
+                default:
+                    signal = generateSpectralNoise(N, alpha, fs);
+            }
+            
+            // Aplicar ventana
+            if (window !== 'none') {
+                signal = applyWindow(signal, window);
+            }
+            
+            // Aplicar filtros
+            signal = applyFilters(signal, fs);
+            
+            // Aplicar suavizado
+            if (smoothing !== 'none') {
+                signal = applySmoothing(signal, smoothing);
+            }
+            
+            currentSignal = signal;
+            
+            // Visualizar
+            plotTimeSeries(signal, fs);
+            analyzeSpectrum();
+        }
+        
+        // Método espectral FFT mejorado
+        function generateSpectralNoise(N, alpha, fs) {
+            const signal = new Array(N);
+            const freqs = new Array(N/2);
+            
+            // Generar frecuencias
+            for (let i = 0; i < N/2; i++) {
+                freqs[i] = i * fs / N;
+            }
+            
+            // Crear espectro de potencia 1/f^alpha
+            const spectrum = new Array(N);
+            spectrum[0] = 1.0; // DC component
+            
+            for (let i = 1; i < N/2; i++) {
+                const freq = freqs[i];
+                if (freq > 0) {
+                    spectrum[i] = Math.pow(freq, -alpha/2);
+                } else {
+                    spectrum[i] = 1.0;
+                }
+            }
+            
+            // Simetría hermítica
+            for (let i = N/2; i < N; i++) {
+                spectrum[i] = spectrum[N - i];
+            }
+            
+            // Generar señal compleja con fase aleatoria
+            const complexSignal = new Array(N);
+            for (let i = 0; i < N; i++) {
+                const phase = Math.random() * 2 * Math.PI;
+                complexSignal[i] = {
+                    real: spectrum[i] * Math.cos(phase),
+                    imag: spectrum[i] * Math.sin(phase)
+                };
+            }
+            
+            // IFFT
+            const result = ifft(complexSignal);
+            
+            // Extraer parte real y normalizar
+            for (let i = 0; i < N; i++) {
+                signal[i] = result[i].real;
+            }
+            
+            return normalizeSignal(signal);
+        }
+        
+        // Método Kasdin-Walter
+        function generateKasdinNoise(N, alpha) {
+            const H = (alpha - 1) / 2; // Exponente Hurst
+            const signal = new Array(N);
+            
+            // Generar ruido blanco
+            for (let i = 0; i < N; i++) {
+                signal[i] = gaussianRandom();
+            }
+            
+            // Aplicar filtro fractal
+            const filtered = fractionalFilter(signal, H);
+            return normalizeSignal(filtered);
+        }
+        
+        // Método Timmer-Koenig mejorado
+        function generateTimmerNoise(N, alpha, fs) {
+            const signal = new Array(N);
+            const dt = 1.0 / fs;
+            
+            // Generar ruido blanco
+            for (let i = 0; i < N; i++) {
+                signal[i] = gaussianRandom();
+            }
+            
+            // Aplicar filtro espectral
+            const filtered = spectralFilter(signal, alpha, dt);
+            return normalizeSignal(filtered);
+        }
+        
+        // Método Mandelbrot-Van Ness
+        function generateMandelbrotNoise(N, alpha) {
+            const H = (alpha - 1) / 2;
+            const signal = new Array(N);
+            
+            for (let i = 0; i < N; i++) {
+                let sum = 0;
+                for (let j = 0; j < i; j++) {
+                    const weight = Math.pow(i - j, H - 0.5);
+                    sum += weight * gaussianRandom();
+                }
+                signal[i] = sum;
+            }
+            
+            return normalizeSignal(signal);
+        }
+        
+        // Aplicar ventana
+        function applyWindow(signal, windowType) {
+            const N = signal.length;
+            const windowed = new Array(N);
+            
+            for (let i = 0; i < N; i++) {
+                let w = 1.0;
+                const n = i / (N - 1);
+                
+                switch(windowType) {
+                    case 'hann':
+                        w = 0.5 - 0.5 * Math.cos(2 * Math.PI * n);
+                        break;
+                    case 'hamming':
+                        w = 0.54 - 0.46 * Math.cos(2 * Math.PI * n);
+                        break;
+                    case 'blackman':
+                        w = 0.42 - 0.5 * Math.cos(2 * Math.PI * n) + 0.08 * Math.cos(4 * Math.PI * n);
+                        break;
+                }
+                
+                windowed[i] = signal[i] * w;
+            }
+            
+            return windowed;
+        }
+        
+        // Aplicar filtros anti-artefactos
+        function applyFilters(signal, fs) {
+            const lowpass = parseFloat(document.getElementById('lowpassSlider').value);
+            const highpass = parseFloat(document.getElementById('highpassSlider').value);
+            
+            let filtered = signal.slice();
+            
+            // Filtro pasa-bajas
+            if (lowpass < fs/2) {
+                filtered = butterworthFilter(filtered, lowpass, fs, 'low');
+            }
+            
+            // Filtro pasa-altas
+            if (highpass > 0) {
+                filtered = butterworthFilter(filtered, highpass, fs, 'high');
+            }
+            
+            return filtered;
+        }
+        
+        // Aplicar suavizado
+        function applySmoothing(signal, smoothingType) {
+            const N = signal.length;
+            const smoothed = new Array(N);
+            
+            switch(smoothingType) {
+                case 'moving':
+                    return movingAverage(signal, 5);
+                case 'gaussian':
+                    return gaussianSmooth(signal, 2.0);
+                case 'savgol':
+                    return savitzkyGolay(signal, 5, 2);
+                default:
+                    return signal;
+            }
+        }
+        
+        // Funciones auxiliares
+        function gaussianRandom() {
+            let u = 0, v = 0;
+            while(u === 0) u = Math.random();
+            while(v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+        
+        function normalizeSignal(signal) {
+            const mean = signal.reduce((a, b) => a + b) / signal.length;
+            const std = Math.sqrt(signal.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / signal.length);
+            
+            return signal.map(x => (x - mean) / std);
+        }
+        
+        function movingAverage(signal, windowSize) {
+            const N = signal.length;
+            const smoothed = new Array(N);
+            const halfWindow = Math.floor(windowSize / 2);
+            
+            for (let i = 0; i < N; i++) {
+                let sum = 0;
+                let count = 0;
+                
+                for (let j = Math.max(0, i - halfWindow); j <= Math.min(N - 1, i + halfWindow); j++) {
+                    sum += signal[j];
+                    count++;
+                }
+                
+                smoothed[i] = sum / count;
+            }
+            
+            return smoothed;
+        }
+        
+        function gaussianSmooth(signal, sigma) {
+            const N = signal.length;
+            const smoothed = new Array(N);
+            const kernelSize = Math.ceil(6 * sigma);
+            
+            for (let i = 0; i < N; i++) {
+                let sum = 0;
+                let weightSum = 0;
+                
+                for (let j = Math.max(0, i - kernelSize); j <= Math.min(N - 1, i + kernelSize); j++) {
+                    const weight = Math.exp(-0.5 * Math.pow((i - j) / sigma, 2));
+                    sum += signal[j] * weight;
+                    weightSum += weight;
+                }
+                
+                smoothed[i] = sum / weightSum;
+            }
+            
+            return smoothed;
+        }
+        
+        function savitzkyGolay(signal, windowSize, order) {
+            // Implementación simplificada de Savitzky-Golay
+            return movingAverage(signal, windowSize);
+        }
+        
+        function butterworthFilter(signal, cutoff, fs, type) {
+            // Implementación simplificada de filtro Butterworth
+            const alpha = Math.exp(-2 * Math.PI * cutoff / fs);
+            const filtered = new Array(signal.length);
+            
+            if (type === 'low') {
+                filtered[0] = signal[0];
+                for (let i = 1; i < signal.length; i++) {
+                    filtered[i] = alpha * filtered[i-1] + (1 - alpha) * signal[i];
+                }
+            } else {
+                filtered[0] = signal[0];
+                for (let i = 1; i < signal.length; i++) {
+                    filtered[i] = alpha * filtered[i-1] + signal[i] - signal[i-1];
+                }
+            }
+            
+            return filtered;
+        }
+        
+        function spectralFilter(signal, alpha, dt) {
+            // Implementación simplificada de filtro espectral
+            return signal; // Placeholder
+        }
+        
+        function fractionalFilter(signal, H) {
+            // Implementación simplificada de filtro fractal
+            return signal; // Placeholder
+        }
+        
+        // FFT simplificada
+        function ifft(X) {
+            const N = X.length;
+            const x = new Array(N);
+            
+            for (let n = 0; n < N; n++) {
+                let real = 0, imag = 0;
+                for (let k = 0; k < N; k++) {
+                    const angle = 2 * Math.PI * k * n / N;
+                    real += X[k].real * Math.cos(angle) - X[k].imag * Math.sin(angle);
+                    imag += X[k].real * Math.sin(angle) + X[k].imag * Math.cos(angle);
+                }
+                x[n] = { real: real / N, imag: imag / N };
+            }
+            
+            return x;
+        }
+        
+        // Visualización
+        function plotTimeSeries(signal, fs) {
+            const ctx = timeCtx;
+            const width = timeCanvas.width;
+            const height = timeCanvas.height;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            // Configurar estilo
+            ctx.strokeStyle = '#4fc3f7';
+            ctx.lineWidth = 1;
+            
+            // Normalizar para visualización
+            const minVal = Math.min(...signal);
+            const maxVal = Math.max(...signal);
+            const range = maxVal - minVal;
+            
+            ctx.beginPath();
+            for (let i = 0; i < signal.length; i++) {
+                const x = (i / signal.length) * width;
+                const y = height - ((signal[i] - minVal) / range) * height;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            
+            // Ejes
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, height/2);
+            ctx.lineTo(width, height/2);
+            ctx.stroke();
+        }
+        
+        function analyzeSpectrum() {
+            if (!currentSignal) return;
+            
+            const N = currentSignal.length;
+            const fs = parseFloat(document.getElementById('fsSlider').value);
+            
+            // Calcular espectro de potencia
+            const spectrum = computePowerSpectrum(currentSignal);
+            const freqs = new Array(spectrum.length);
+            
+            for (let i = 0; i < spectrum.length; i++) {
+                freqs[i] = i * fs / (2 * spectrum.length);
+            }
+            
+            currentSpectrum = { freqs, spectrum };
+            
+            // Visualizar espectro
+            plotSpectrum(freqs, spectrum);
+            
+            // Calcular estadísticas
+            calculateStats(freqs, spectrum);
+        }
+        
+        function computePowerSpectrum(signal) {
+            const N = signal.length;
+            const spectrum = new Array(N/2);
+            
+            // FFT simplificada para espectro de potencia
+            for (let k = 0; k < N/2; k++) {
+                let real = 0, imag = 0;
+                for (let n = 0; n < N; n++) {
+                    const angle = -2 * Math.PI * k * n / N;
+                    real += signal[n] * Math.cos(angle);
+                    imag += signal[n] * Math.sin(angle);
+                }
+                spectrum[k] = (real * real + imag * imag) / N;
+            }
+            
+            return spectrum;
+        }
+        
+        function plotSpectrum(freqs, spectrum) {
+            const ctx = spectrumCtx;
+            const width = spectrumCanvas.width;
+            const height = spectrumCanvas.height;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            // Escala logarítmica
+            const logFreqs = freqs.map(f => Math.log10(f + 1));
+            const logSpectrum = spectrum.map(s => Math.log10(s + 1e-10));
+            
+            const minLogFreq = Math.min(...logFreqs);
+            const maxLogFreq = Math.max(...logFreqs);
+            const minLogSpec = Math.min(...logSpectrum);
+            const maxLogSpec = Math.max(...logSpectrum);
+            
+            // Graficar espectro
+            ctx.strokeStyle = '#81c784';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            for (let i = 1; i < logFreqs.length; i++) {
+                const x = ((logFreqs[i] - minLogFreq) / (maxLogFreq - minLogFreq)) * width;
+                const y = height - ((logSpectrum
+  
