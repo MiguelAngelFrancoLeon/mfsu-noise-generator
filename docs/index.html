@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Ruido 1/f Espectral Avanzado</title>
     <style>
-        /* Tu CSS original se mantiene, solo añado ajustes menores */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
@@ -87,6 +86,7 @@
             font-size: 16px;
             transition: all 0.3s ease;
             margin: 5px;
+            pointer-events: auto; /* Asegurar clics */
         }
         .button:hover {
             transform: translateY(-2px);
@@ -242,9 +242,9 @@
         </div>
         
         <div style="text-align: center;">
-            <button class="button" onclick="generateNoise()">Generar Ruido 1/f</button>
-            <button class="button" onclick="analyzeSpectrum()">Analizar Espectro</button>
-            <button class="button" onclick="exportData()">Exportar Datos</button>
+            <button class="button" id="generateButton">Generar Ruido 1/f</button>
+            <button class="button" id="analyzeButton">Analizar Espectro</button>
+            <button class="button" id="exportButton">Exportar Datos</button>
         </div>
         
         <div class="visualization">
@@ -279,11 +279,11 @@
         
         <div class="method-info">
             <h4>Conexión con MFSU</h4>
-            <p>Este generador crea ruido 1/f con \(\alpha \approx 1.842\), compatible con el MFSU (\(\partial \approx 0.921\)) para simular fluctuaciones en CMB, vórtices, y EEG. Usa el método Timmer-Koenig con suavizado Savitzky-Golay para máxima precisión. Ver <a href="https://github.com/MiguelAngelFrancoLeon/MFSU-Fractal-Dynamics">repositorio</a> y <a href="doc/mfsu_manuscript.pdf">manuscrito</a>.</p>
+            <p>Genera ruido 1/f con \(\alpha \approx 1.842\), compatible con el MFSU (\(\partial \approx 0.921\)) para simular fluctuaciones en CMB, vórtices, y EEG. Usa Timmer-Koenig con suavizado Savitzky-Golay. Ver <a href="https://github.com/MiguelAngelFrancoLeon/MFSU-Fractal-Dynamics">repositorio</a> y <a href="doc/mfsu_manuscript.pdf">manuscrito</a>.</p>
         </div>
         
         <div class="warning">
-            <strong>Nota:</strong> Para aplicaciones críticas como el MFSU (\(\partial \approx 0.921\)), usa el método Timmer-Koenig con suavizado Savitzky-Golay y \(\alpha=1.842\) para coincidir con el espectro del CMB.
+            <strong>Nota:</strong> Usa \(\alpha=1.842\) y Timmer-Koenig para coincidir con el espectro del CMB (\(\partial \approx 0.921\)).
         </div>
         
         <div id="error-message" class="error" style="display: none;"></div>
@@ -301,7 +301,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             initializeCanvases();
             setupEventListeners();
-            generateNoise();
+            generateNoise(); // Generar ruido inicial
         });
 
         function initializeCanvases() {
@@ -323,16 +323,24 @@
         }
 
         function setupEventListeners() {
+            // Sliders
             ['alphaSlider', 'lengthSlider', 'fsSlider', 'lowpassSlider', 'highpassSlider'].forEach(id => {
                 const slider = document.getElementById(id);
                 slider.oninput = function() {
                     document.getElementById(id.replace('Slider', 'Value')).textContent = this.value;
                 };
             });
+
+            // Botones
+            document.getElementById('generateButton').addEventListener('click', generateNoise);
+            document.getElementById('analyzeButton').addEventListener('click', analyzeSpectrum);
+            document.getElementById('exportButton').addEventListener('click', exportData);
+
+            // Redimensionar canvas
             window.addEventListener('resize', resizeCanvases);
         }
 
-        // Generador de ruido 1/f
+        // Generador de ruido
         function generateNoise() {
             try {
                 const alpha = parseFloat(document.getElementById('alphaSlider').value);
@@ -383,7 +391,7 @@
                 spectrum[i] = freqs[i] > 0 ? Math.pow(freqs[i], -alpha/2) : 0;
             }
             for (let i = N/2; i < N; i++) {
-                spectrum[i] = spectrum[N - i]; // Simetría
+                spectrum[i] = spectrum[N - i];
             }
 
             const complexSignal = new Array(N).fill(0).map((_, i) => {
@@ -407,7 +415,7 @@
                 const power = freqs[i] > 0 ? Math.pow(freqs[i], -alpha/2) : 0;
                 const sigma = Math.sqrt(power / 2);
                 spectrum[i] = gaussianRandom() * sigma;
-                spectrum[N-i] = gaussianRandom() * sigma; // Simetría
+                spectrum[N-i] = gaussianRandom() * sigma;
             }
 
             const complexSignal = new Array(N).fill(0).map((_, i) => [spectrum[i], 0]);
@@ -422,7 +430,7 @@
         function generateKasdinNoise(N, alpha) {
             const H = (alpha - 1) / 2;
             const signal = new Array(N).fill(0).map(() => gaussianRandom());
-            return normalizeSignal(signal); // Placeholder, necesita filtro fractal
+            return normalizeSignal(signal); // Placeholder
         }
 
         function generateMandelbrotNoise(N, alpha) {
@@ -522,7 +530,7 @@
         }
 
         function savitzkyGolay(signal, windowSize, order) {
-            return movingAverage(signal, windowSize); // Placeholder simplificado
+            return movingAverage(signal, windowSize); // Placeholder
         }
 
         function butterworthFilter(signal, cutoff, fs, type) {
@@ -549,7 +557,7 @@
 
             const minVal = Math.min(...signal);
             const maxVal = Math.max(...signal);
-            const range = maxVal - minVal || 1; // Evitar división por cero
+            const range = maxVal - minVal || 1;
 
             ctx.beginPath();
             for (let i = 0; i < signal.length; i++) {
@@ -599,23 +607,28 @@
             const height = spectrumCanvas.height / window.devicePixelRatio;
             ctx.clearRect(0, 0, width, height);
 
-            const logFreqs = freqs.map(f => Math.log10(f + 1e-10));
-            const logSpectrum = spectrum.map(s => Math.log10(s + 1e-10));
-            const minLogFreq = Math.min(...logFreqs.filter(f => isFinite(f)));
-            const maxLogFreq = Math.max(...logFreqs.filter(f => isFinite(f)));
-            const minLogSpec = Math.min(...logSpectrum.filter(s => isFinite(s)));
-            const maxLogSpec = Math.max(...logSpectrum.filter(s => isFinite(s)));
+            const logFreqs = freqs.map(f => Math.log10(f + 1e-10)).filter(f => isFinite(f));
+            const logSpectrum = spectrum.map(s => Math.log10(s + 1e-10)).filter(s => isFinite(s));
+
+            if (logFreqs.length < 2) {
+                document.getElementById('error-message').innerHTML = 'Error: Datos insuficientes para el espectro';
+                document.getElementById('error-message').style.display = 'block';
+                return;
+            }
+
+            const minLogFreq = Math.min(...logFreqs);
+            const maxLogFreq = Math.max(...logFreqs);
+            const minLogSpec = Math.min(...logSpectrum);
+            const maxLogSpec = Math.max(...logSpectrum);
 
             ctx.strokeStyle = '#81c784';
             ctx.lineWidth = 2;
             ctx.beginPath();
             for (let i = 1; i < logFreqs.length; i++) {
-                if (isFinite(logFreqs[i]) && isFinite(logSpectrum[i])) {
-                    const x = ((logFreqs[i] - minLogFreq) / (maxLogFreq - minLogFreq)) * width;
-                    const y = height - ((logSpectrum[i] - minLogSpec) / (maxLogSpec - minLogSpec)) * (height * 0.8) - (height * 0.1);
-                    if (i === 1) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
+                const x = ((logFreqs[i] - minLogFreq) / (maxLogFreq - minLogFreq)) * width;
+                const y = height - ((logSpectrum[i] - minLogSpec) / (maxLogSpec - minLogSpec)) * (height * 0.8) - (height * 0.1);
+                if (i === 1) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
             }
             ctx.stroke();
 
@@ -633,6 +646,8 @@
             if (logFreqs.length < 2) {
                 document.getElementById('slopeValue').textContent = 'N/A';
                 document.getElementById('correlationValue').textContent = 'N/A';
+                document.getElementById('fractalValue').textContent = 'N/A';
+                document.getElementById('hurstValue').textContent = 'N/A';
                 return;
             }
 
@@ -655,7 +670,7 @@
             }
             const r2 = 1 - ssRes / ssTot;
 
-            const hurst = (2 - slope) / 2;
+            const hurst = (2 - Math.abs(slope)) / 2;
             const fractalDim = 2 - hurst;
 
             document.getElementById('slopeValue').textContent = slope.toFixed(3);
