@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced 1/f Spectral Noise Generator</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
+      color: #e0e0e0;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(30, 30, 50, 0.95);
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+    h1 {
+      text-align: center;
+      color: #4fc3f7;
+      margin-bottom: 30px;
+      text-shadow: 0 0 20px rgba(79, 195, 247, 0.3);
+    }
+    .button {
+      background: linear-gradient(45deg, #4fc3f7, #29b6f6);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      margin: 5px;
+    }
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(79, 195, 247, 0.4);
+    }
+    .note {
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border-left: 4px solid #4fc3f7;
+      color: #81c784;
+    }
+    canvas {
+      background: #1a1a1a;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌊 Advanced 1/f Spectral Noise Generator</h1>
+    <div style="text-align: center;">
+      <button class="button" onclick="generateNoise()">🎲 Generate 1/f Noise</button>
+      <button class="button" onclick="analyzeSpectrum()">📊 Analyze Spectrum</button>
+      <button class="button" onclick="exportData()">💾 Export Data</button>
+    </div>
+
+    <canvas id="timeCanvas" width="1000" height="300"></canvas>
+    <canvas id="spectrumCanvas" width="1000" height="300"></canvas>
+
+    <div class="note">
+      ⚠️ This tool is part of the MFSU (Unified Fractal-Stochastic Model) initiative to analyze natural 1/f noise patterns. Uses JavaScript-based FFT and visualization.
+    </div>
+  </div>
+
+  <script>
+    let timeCanvas = document.getElementById('timeCanvas');
+    let spectrumCanvas = document.getElementById('spectrumCanvas');
+    let timeCtx = timeCanvas.getContext('2d');
+    let spectrumCtx = spectrumCanvas.getContext('2d');
+    let currentSignal = null;
+
+    function gaussianRandom() {
+      let u = 0, v = 0;
+      while(u === 0) u = Math.random();
+      while(v === 0) v = Math.random();
+      return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    }
+
+    function generateNoise() {
+      const N = 1024;
+      const alpha = 1.0;
+      const fs = 1000;
+
+      const freqs = Array.from({length: N/2}, (_, i) => i * fs / N);
+      const spectrum = freqs.map(f => f === 0 ? 1 : Math.pow(f, -alpha/2));
+      const complexSignal = Array.from({length: N}, (_, i) => {
+        const phase = Math.random() * 2 * Math.PI;
+        return {
+          real: spectrum[i % (N/2)] * Math.cos(phase),
+          imag: spectrum[i % (N/2)] * Math.sin(phase)
+        };
+      });
+
+      const signal = ifft(complexSignal).map(c => c.real);
+      const mean = signal.reduce((a, b) => a + b, 0) / N;
+      const std = Math.sqrt(signal.reduce((a, b) => a + (b - mean) ** 2, 0) / N);
+      currentSignal = signal.map(x => (x - mean) / std);
+
+      drawSignal(currentSignal);
+    }
+
+    function ifft(X) {
+      const N = X.length;
+      return Array.from({length: N}, (_, n) => {
+        let real = 0, imag = 0;
+        for (let k = 0; k < N; k++) {
+          const angle = 2 * Math.PI * k * n / N;
+          real += X[k].real * Math.cos(angle) - X[k].imag * Math.sin(angle);
+          imag += X[k].real * Math.sin(angle) + X[k].imag * Math.cos(angle);
+        }
+        return { real: real / N, imag: imag / N };
+      });
+    }
+
+    function drawSignal(signal) {
+      const ctx = timeCtx;
+      ctx.clearRect(0, 0, timeCanvas.width, timeCanvas.height);
+      ctx.strokeStyle = '#4fc3f7';
+      ctx.beginPath();
+      signal.forEach((val, i) => {
+        const x = i * timeCanvas.width / signal.length;
+        const y = timeCanvas.height/2 - val * 40;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    function analyzeSpectrum() {
+      if (!currentSignal) return;
+      const N = currentSignal.length;
+      const fs = 1000;
+      const freqs = Array.from({length: N/2}, (_, k) => k * fs / N);
+      const powers = freqs.map((_, k) => {
+        let real = 0, imag = 0;
+        for (let n = 0; n < N; n++) {
+          const angle = -2 * Math.PI * k * n / N;
+          real += currentSignal[n] * Math.cos(angle);
+          imag += currentSignal[n] * Math.sin(angle);
+        }
+        return (real * real + imag * imag) / N;
+      });
+
+      drawSpectrum(freqs, powers);
+    }
+
+    function drawSpectrum(freqs, powers) {
+      const ctx = spectrumCtx;
+      ctx.clearRect(0, 0, spectrumCanvas.width, spectrumCanvas.height);
+      ctx.strokeStyle = '#81c784';
+      ctx.beginPath();
+      freqs.forEach((f, i) => {
+        const x = Math.log10(f + 1) / Math.log10(freqs[freqs.length - 1] + 1) * spectrumCanvas.width;
+        const y = spectrumCanvas.height - Math.log10(powers[i] + 1e-10) * 30;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    function exportData() {
+      if (!currentSignal) return;
+      const blob = new Blob([currentSignal.join('\n')], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'signal_data.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
