@@ -25,7 +25,6 @@
             text-align: center;
             color: #4fc3f7;
             margin-bottom: 30px;
-            text-shadow: 0 0 20px rgba(79, 195, 247, 0.3);
         }
         .controls {
             display: grid;
@@ -41,8 +40,7 @@
         }
         .control-group h3 {
             color: #81c784;
-            margin-top: 0;
-            margin-bottom: 15px;
+            margin: 0 0 15px;
         }
         .control-item {
             margin-bottom: 15px;
@@ -86,7 +84,7 @@
             font-size: 16px;
             transition: all 0.3s ease;
             margin: 5px;
-            pointer-events: auto; /* Asegurar clics */
+            pointer-events: auto;
         }
         .button:hover {
             transform: translateY(-2px);
@@ -148,7 +146,7 @@
         }
         .method-info h4 {
             color: #4fc3f7;
-            margin-top: 0;
+            margin: 0;
         }
         .warning {
             background: rgba(255, 152, 0, 0.1);
@@ -166,13 +164,54 @@
             margin: 10px 0;
             border-left: 4px solid #ff5252;
         }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #1e1e32;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-content h2 {
+            color: #4fc3f7;
+            margin-bottom: 20px;
+        }
+        .modal-content button {
+            background: #4fc3f7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .modal-content button:hover {
+            background: #29b6f6;
+        }
+        .modal-content input {
+            width: 80%;
+            padding: 8px;
+            margin: 10px 0;
+            background: #333;
+            color: #e0e0e0;
+            border: 1px solid #555;
+            border-radius: 5px;
+        }
         @media (max-width: 768px) {
-            .visualization {
-                grid-template-columns: 1fr;
-            }
-            .controls {
-                grid-template-columns: 1fr;
-            }
+            .visualization { grid-template-columns: 1fr; }
+            .controls { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -204,8 +243,6 @@
                     <select id="methodSelect">
                         <option value="timmer">Timmer-Koenig</option>
                         <option value="spectral">Método Espectral FFT</option>
-                        <option value="kasdin">Kasdin-Walter</option>
-                        <option value="mandelbrot">Mandelbrot-Van Ness</option>
                     </select>
                 </div>
                 <div class="control-item">
@@ -245,6 +282,7 @@
             <button class="button" id="generateButton">Generar Ruido 1/f</button>
             <button class="button" id="analyzeButton">Analizar Espectro</button>
             <button class="button" id="exportButton">Exportar Datos</button>
+            <button class="button" id="shareButton">Compartir</button>
         </div>
         
         <div class="visualization">
@@ -279,7 +317,7 @@
         
         <div class="method-info">
             <h4>Conexión con MFSU</h4>
-            <p>Genera ruido 1/f con \(\alpha \approx 1.842\), compatible con el MFSU (\(\partial \approx 0.921\)) para simular fluctuaciones en CMB, vórtices, y EEG. Usa Timmer-Koenig con suavizado Savitzky-Golay. Ver <a href="https://github.com/MiguelAngelFrancoLeon/MFSU-Fractal-Dynamics">repositorio</a> y <a href="doc/mfsu_manuscript.pdf">manuscrito</a>.</p>
+            <p>Genera ruido 1/f con \(\alpha \approx 1.842\), compatible con el MFSU (\(\partial \approx 0.921\)) para simular CMB, vórtices, y EEG. Usa Timmer-Koenig con Savitzky-Golay. Ver <a href="https://github.com/MiguelAngelFrancoLeon/MFSU-Fractal-Dynamics">repositorio</a>.</p>
         </div>
         
         <div class="warning">
@@ -287,26 +325,63 @@
         </div>
         
         <div id="error-message" class="error" style="display: none;"></div>
+        
+        <!-- Modal para compartir -->
+        <div id="shareModal" class="modal">
+            <div class="modal-content">
+                <h2>Comparte el Generador de Ruido 1/f</h2>
+                <input type="text" id="shareLink" value="https://miguelangelfrancoleon.github.io/MFSU-Fractal-Dynamics/mfsu_noise_generator.html" readonly>
+                <button onclick="copyLink()">Copiar Enlace</button>
+                <button onclick="shareOnX()">Compartir en X</button>
+                <button onclick="closeModal()">Cerrar</button>
+            </div>
+        </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fft.js/0.0.4/fft.min.js"></script>
+    <script src="fft.min.js"></script>
+    <script src="share-modal.js"></script>
     <script>
-        // Variables globales
+        console.log("Script principal cargado.");
+
+        // Verificar fft.js
+        if (typeof FFT === 'undefined') {
+            document.getElementById('error-message').innerHTML = 'Error: No se pudo cargar fft.js. Asegúrate de que fft.min.js esté en la carpeta docs/.';
+            document.getElementById('error-message').style.display = 'block';
+            throw new Error('FFT no definido');
+        } else {
+            console.log("FFT.js cargado correctamente.");
+        }
+
         let currentSignal = null;
         let currentSpectrum = null;
         let timeCanvas, spectrumCanvas;
         let timeCtx, spectrumCtx;
 
-        // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
-            initializeCanvases();
-            setupEventListeners();
-            generateNoise(); // Generar ruido inicial
+            console.log("DOMContentLoaded ejecutado.");
+            try {
+                initializeCanvases();
+                setupEventListeners();
+                generateNoise();
+            } catch (error) {
+                console.error("Error en DOMContentLoaded:", error);
+                showError(`Error inicializando: ${error.message}`);
+            }
         });
 
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.innerHTML = message;
+            errorDiv.style.display = 'block';
+        }
+
         function initializeCanvases() {
+            console.log("Inicializando canvases...");
             timeCanvas = document.getElementById('timeCanvas');
             spectrumCanvas = document.getElementById('spectrumCanvas');
+            if (!timeCanvas || !spectrumCanvas) {
+                throw new Error('Canvas no encontrados');
+            }
             timeCtx = timeCanvas.getContext('2d');
             spectrumCtx = spectrumCanvas.getContext('2d');
             resizeCanvases();
@@ -323,32 +398,50 @@
         }
 
         function setupEventListeners() {
-            // Sliders
+            console.log("Configurando event listeners...");
             ['alphaSlider', 'lengthSlider', 'fsSlider', 'lowpassSlider', 'highpassSlider'].forEach(id => {
                 const slider = document.getElementById(id);
-                slider.oninput = function() {
-                    document.getElementById(id.replace('Slider', 'Value')).textContent = this.value;
-                };
+                if (slider) {
+                    slider.oninput = function() {
+                        document.getElementById(id.replace('Slider', 'Value')).textContent = this.value;
+                    };
+                } else {
+                    console.warn(`Slider ${id} no encontrado`);
+                }
             });
 
-            // Botones
-            document.getElementById('generateButton').addEventListener('click', generateNoise);
-            document.getElementById('analyzeButton').addEventListener('click', analyzeSpectrum);
-            document.getElementById('exportButton').addEventListener('click', exportData);
+            const buttons = [
+                { id: 'generateButton', handler: generateNoise, name: 'Generar Ruido' },
+                { id: 'analyzeButton', handler: analyzeSpectrum, name: 'Analizar Espectro' },
+                { id: 'exportButton', handler: exportData, name: 'Exportar Datos' },
+                { id: 'shareButton', handler: openShareModal, name: 'Compartir' }
+            ];
+            buttons.forEach(({ id, handler, name }) => {
+                const button = document.getElementById(id);
+                if (button) {
+                    button.addEventListener('click', () => {
+                        console.log(`Clic en ${name}`);
+                        handler();
+                    });
+                } else {
+                    console.error(`Botón ${id} no encontrado`);
+                }
+            });
 
-            // Redimensionar canvas
             window.addEventListener('resize', resizeCanvases);
         }
 
-        // Generador de ruido
         function generateNoise() {
+            console.log("Ejecutando generateNoise...");
             try {
                 const alpha = parseFloat(document.getElementById('alphaSlider').value);
                 const N = parseInt(document.getElementById('lengthSlider').value);
                 const fs = parseFloat(document.getElementById('fsSlider').value);
                 const method = document.getElementById('methodSelect').value;
-                const window = document.getElementById('windowSelect').value;
+                const windowType = document.getElementById('windowSelect').value;
                 const smoothing = document.getElementById('smoothingSelect').value;
+
+                console.log(`Parámetros: alpha=${alpha}, N=${N}, fs=${fs}, method=${method}`);
 
                 let signal;
                 switch(method) {
@@ -358,17 +451,11 @@
                     case 'timmer':
                         signal = generateTimmerNoise(N, alpha, fs);
                         break;
-                    case 'kasdin':
-                        signal = generateKasdinNoise(N, alpha);
-                        break;
-                    case 'mandelbrot':
-                        signal = generateMandelbrotNoise(N, alpha);
-                        break;
                     default:
-                        throw new Error('Método no soportado');
+                        throw new Error('Método no soportado: ' + method);
                 }
 
-                if (window !== 'none') signal = applyWindow(signal, window);
+                if (windowType !== 'none') signal = applyWindow(signal, windowType);
                 signal = applyFilters(signal, fs);
                 if (smoothing !== 'none') signal = applySmoothing(signal, smoothing);
 
@@ -377,16 +464,17 @@
                 analyzeSpectrum();
                 document.getElementById('error-message').style.display = 'none';
             } catch (error) {
-                document.getElementById('error-message').innerHTML = `Error: ${error.message}`;
-                document.getElementById('error-message').style.display = 'block';
+                console.error("Error en generateNoise:", error);
+                showError(`Error al generar ruido: ${error.message}`);
             }
         }
 
         function generateSpectralNoise(N, alpha, fs) {
+            console.log("Generando ruido espectral...");
             const fft = new FFT(N);
             const freqs = new Array(N/2).fill(0).map((_, i) => i * fs / N);
             const spectrum = new Array(N).fill(0);
-            spectrum[0] = 0; // DC component
+            spectrum[0] = 0;
             for (let i = 1; i < N/2; i++) {
                 spectrum[i] = freqs[i] > 0 ? Math.pow(freqs[i], -alpha/2) : 0;
             }
@@ -408,6 +496,7 @@
         }
 
         function generateTimmerNoise(N, alpha, fs) {
+            console.log("Generando ruido Timmer-Koenig...");
             const fft = new FFT(N);
             const freqs = new Array(N/2).fill(0).map((_, i) => i * fs / N);
             const spectrum = new Array(N).fill(0);
@@ -424,25 +513,6 @@
             fft.inverseTransform(out, out);
 
             const signal = new Array(N).fill(0).map((_, i) => out[2*i]);
-            return normalizeSignal(signal);
-        }
-
-        function generateKasdinNoise(N, alpha) {
-            const H = (alpha - 1) / 2;
-            const signal = new Array(N).fill(0).map(() => gaussianRandom());
-            return normalizeSignal(signal); // Placeholder
-        }
-
-        function generateMandelbrotNoise(N, alpha) {
-            const H = (alpha - 1) / 2;
-            const signal = new Array(N).fill(0);
-            for (let i = 0; i < N; i++) {
-                let sum = 0;
-                for (let j = 0; j < i; j++) {
-                    sum += Math.pow(i - j, H - 0.5) * gaussianRandom();
-                }
-                signal[i] = sum;
-            }
             return normalizeSignal(signal);
         }
 
@@ -530,7 +600,7 @@
         }
 
         function savitzkyGolay(signal, windowSize, order) {
-            return movingAverage(signal, windowSize); // Placeholder
+            return movingAverage(signal, windowSize);
         }
 
         function butterworthFilter(signal, cutoff, fs, type) {
@@ -548,152 +618,177 @@
         }
 
         function plotTimeSeries(signal, fs) {
-            const ctx = timeCtx;
-            const width = timeCanvas.width / window.devicePixelRatio;
-            const height = timeCanvas.height / window.devicePixelRatio;
-            ctx.clearRect(0, 0, width, height);
-            ctx.strokeStyle = '#4fc3f7';
-            ctx.lineWidth = 1;
+            console.log("Dibujando señal temporal...");
+            try {
+                const ctx = timeCtx;
+                const width = timeCanvas.width / window.devicePixelRatio;
+                const height = timeCanvas.height / window.devicePixelRatio;
+                ctx.clearRect(0, 0, width, height);
+                ctx.strokeStyle = '#4fc3f7';
+                ctx.lineWidth = 1;
 
-            const minVal = Math.min(...signal);
-            const maxVal = Math.max(...signal);
-            const range = maxVal - minVal || 1;
+                const minVal = Math.min(...signal);
+                const maxVal = Math.max(...signal);
+                const range = maxVal - minVal || 1;
 
-            ctx.beginPath();
-            for (let i = 0; i < signal.length; i++) {
-                const x = (i / signal.length) * width;
-                const y = height - ((signal[i] - minVal) / range) * (height * 0.8) - (height * 0.1);
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
+                ctx.beginPath();
+                for (let i = 0; i < signal.length; i++) {
+                    const x = (i / signal.length) * width;
+                    const y = height - ((signal[i] - minVal) / range) * (height * 0.8) - (height * 0.1);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+
+                ctx.strokeStyle = '#666';
+                ctx.beginPath();
+                ctx.moveTo(0, height/2);
+                ctx.lineTo(width, height/2);
+                ctx.stroke();
+            } catch (error) {
+                console.error("Error en plotTimeSeries:", error);
+                showError(`Error dibujando señal: ${error.message}`);
             }
-            ctx.stroke();
-
-            ctx.strokeStyle = '#666';
-            ctx.beginPath();
-            ctx.moveTo(0, height/2);
-            ctx.lineTo(width, height/2);
-            ctx.stroke();
         }
 
         function analyzeSpectrum() {
-            if (!currentSignal) {
-                document.getElementById('error-message').innerHTML = 'Error: No se ha generado ninguna señal';
-                document.getElementById('error-message').style.display = 'block';
-                return;
+            console.log("Ejecutando analyzeSpectrum...");
+            try {
+                if (!currentSignal) {
+                    throw new Error('No se ha generado ninguna señal');
+                }
+
+                const N = currentSignal.length;
+                const fs = parseFloat(document.getElementById('fsSlider').value);
+                const fft = new FFT(N);
+                const complex = fft.createComplexArray();
+                fft.toComplexArray(currentSignal, complex);
+                fft.transform(complex, complex);
+
+                const spectrum = new Array(N/2).fill(0).map((_, i) => {
+                    const real = complex[2*i];
+                    const imag = complex[2*i + 1];
+                    return (real * real + imag * imag) / N;
+                });
+                const freqs = new Array(N/2).fill(0).map((_, i) => i * fs / N);
+
+                currentSpectrum = { freqs, spectrum };
+                plotSpectrum(freqs, spectrum);
+                calculateStats(freqs, spectrum);
+                document.getElementById('error-message').style.display = 'none';
+            } catch (error) {
+                console.error("Error en analyzeSpectrum:", error);
+                showError(`Error al analizar espectro: ${error.message}`);
             }
-
-            const N = currentSignal.length;
-            const fs = parseFloat(document.getElementById('fsSlider').value);
-            const fft = new FFT(N);
-            const complex = fft.createComplexArray();
-            fft.toComplexArray(currentSignal, complex);
-            fft.transform(complex, complex);
-
-            const spectrum = new Array(N/2).fill(0).map((_, i) => {
-                const real = complex[2*i];
-                const imag = complex[2*i + 1];
-                return (real * real + imag * imag) / N;
-            });
-            const freqs = new Array(N/2).fill(0).map((_, i) => i * fs / N);
-
-            currentSpectrum = { freqs, spectrum };
-            plotSpectrum(freqs, spectrum);
-            calculateStats(freqs, spectrum);
         }
 
         function plotSpectrum(freqs, spectrum) {
-            const ctx = spectrumCtx;
-            const width = spectrumCanvas.width / window.devicePixelRatio;
-            const height = spectrumCanvas.height / window.devicePixelRatio;
-            ctx.clearRect(0, 0, width, height);
+            console.log("Dibujando espectro...");
+            try {
+                const ctx = spectrumCtx;
+                const width = spectrumCanvas.width / window.devicePixelRatio;
+                const height = spectrumCanvas.height / window.devicePixelRatio;
+                ctx.clearRect(0, 0, width, height);
 
-            const logFreqs = freqs.map(f => Math.log10(f + 1e-10)).filter(f => isFinite(f));
-            const logSpectrum = spectrum.map(s => Math.log10(s + 1e-10)).filter(s => isFinite(s));
+                const logFreqs = freqs.map(f => Math.log10(f + 1e-10)).filter(f => isFinite(f));
+                const logSpectrum = spectrum.map(s => Math.log10(s + 1e-10)).filter(s => isFinite(s));
 
-            if (logFreqs.length < 2) {
-                document.getElementById('error-message').innerHTML = 'Error: Datos insuficientes para el espectro';
-                document.getElementById('error-message').style.display = 'block';
-                return;
+                if (logFreqs.length < 2) {
+                    throw new Error('Datos insuficientes para el espectro');
+                }
+
+                const minLogFreq = Math.min(...logFreqs);
+                const maxLogFreq = Math.max(...logFreqs);
+                const minLogSpec = Math.min(...logSpectrum);
+                const maxLogSpec = Math.max(...logSpectrum);
+
+                ctx.strokeStyle = '#81c784';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (let i = 1; i < logFreqs.length; i++) {
+                    const x = ((logFreqs[i] - minLogFreq) / (maxLogFreq - minLogFreq)) * width;
+                    const y = height - ((logSpectrum[i] - minLogSpec) / (maxLogSpec - minLogSpec)) * (height * 0.8) - (height * 0.1);
+                    if (i === 1) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+
+                ctx.strokeStyle = '#666';
+                ctx.beginPath();
+                ctx.moveTo(0, height/2);
+                ctx.lineTo(width, height/2);
+                ctx.stroke();
+            } catch (error) {
+                console.error("Error en plotSpectrum:", error);
+                showError(`Error dibujando espectro: ${error.message}`);
             }
-
-            const minLogFreq = Math.min(...logFreqs);
-            const maxLogFreq = Math.max(...logFreqs);
-            const minLogSpec = Math.min(...logSpectrum);
-            const maxLogSpec = Math.max(...logSpectrum);
-
-            ctx.strokeStyle = '#81c784';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            for (let i = 1; i < logFreqs.length; i++) {
-                const x = ((logFreqs[i] - minLogFreq) / (maxLogFreq - minLogFreq)) * width;
-                const y = height - ((logSpectrum[i] - minLogSpec) / (maxLogSpec - minLogSpec)) * (height * 0.8) - (height * 0.1);
-                if (i === 1) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.stroke();
-
-            ctx.strokeStyle = '#666';
-            ctx.beginPath();
-            ctx.moveTo(0, height/2);
-            ctx.lineTo(width, height/2);
-            ctx.stroke();
         }
 
         function calculateStats(freqs, spectrum) {
-            const logFreqs = freqs.map(f => Math.log10(f + 1e-10)).filter(f => isFinite(f));
-            const logSpectrum = spectrum.map(s => Math.log10(s + 1e-10)).filter(s => isFinite(s));
+            console.log("Calculando estadísticas...");
+            try {
+                const logFreqs = freqs.map(f => Math.log10(f + 1e-10)).filter(f => isFinite(f));
+                const logSpectrum = spectrum.map(s => Math.log10(s + 1e-10)).filter(s => isFinite(s));
 
-            if (logFreqs.length < 2) {
-                document.getElementById('slopeValue').textContent = 'N/A';
-                document.getElementById('correlationValue').textContent = 'N/A';
-                document.getElementById('fractalValue').textContent = 'N/A';
-                document.getElementById('hurstValue').textContent = 'N/A';
-                return;
+                if (logFreqs.length < 2) {
+                    document.getElementById('slopeValue').textContent = 'N/A';
+                    document.getElementById('correlationValue').textContent = 'N/A';
+                    document.getElementById('fractalValue').textContent = 'N/A';
+                    document.getElementById('hurstValue').textContent = 'N/A';
+                    return;
+                }
+
+                const n = logFreqs.length;
+                const meanX = logFreqs.reduce((a, b) => a + b, 0) / n;
+                const meanY = logSpectrum.reduce((a, b) => a + b, 0) / n;
+                let sumXY = 0, sumXX = 0;
+                for (let i = 0; i < n; i++) {
+                    sumXY += (logFreqs[i] - meanX) * (logSpectrum[i] - meanY);
+                    sumXX += (logFreqs[i] - meanX) ** 2;
+                }
+                const slope = sumXY / sumXX;
+                const intercept = meanY - slope * meanX;
+
+                let ssTot = 0, ssRes = 0;
+                for (let i = 0; i < n; i++) {
+                    const yPred = slope * logFreqs[i] + intercept;
+                    ssTot += (logSpectrum[i] - meanY) ** 2;
+                    ssRes += (logSpectrum[i] - yPred) ** 2;
+                }
+                const r2 = 1 - ssRes / ssTot;
+
+                const hurst = (2 - Math.abs(slope)) / 2;
+                const fractalDim = 2 - hurst;
+
+                document.getElementById('slopeValue').textContent = slope.toFixed(3);
+                document.getElementById('correlationValue').textContent = r2.toFixed(3);
+                document.getElementById('fractalValue').textContent = fractalDim.toFixed(3);
+                document.getElementById('hurstValue').textContent = hurst.toFixed(3);
+            } catch (error) {
+                console.error("Error en calculateStats:", error);
+                showError(`Error calculando estadísticas: ${error.message}`);
             }
-
-            const n = logFreqs.length;
-            const meanX = logFreqs.reduce((a, b) => a + b, 0) / n;
-            const meanY = logSpectrum.reduce((a, b) => a + b, 0) / n;
-            let sumXY = 0, sumXX = 0;
-            for (let i = 0; i < n; i++) {
-                sumXY += (logFreqs[i] - meanX) * (logSpectrum[i] - meanY);
-                sumXX += (logFreqs[i] - meanX) ** 2;
-            }
-            const slope = sumXY / sumXX;
-            const intercept = meanY - slope * meanX;
-
-            let ssTot = 0, ssRes = 0;
-            for (let i = 0; i < n; i++) {
-                const yPred = slope * logFreqs[i] + intercept;
-                ssTot += (logSpectrum[i] - meanY) ** 2;
-                ssRes += (logSpectrum[i] - yPred) ** 2;
-            }
-            const r2 = 1 - ssRes / ssTot;
-
-            const hurst = (2 - Math.abs(slope)) / 2;
-            const fractalDim = 2 - hurst;
-
-            document.getElementById('slopeValue').textContent = slope.toFixed(3);
-            document.getElementById('correlationValue').textContent = r2.toFixed(3);
-            document.getElementById('fractalValue').textContent = fractalDim.toFixed(3);
-            document.getElementById('hurstValue').textContent = hurst.toFixed(3);
         }
 
         function exportData() {
-            if (!currentSignal) {
-                document.getElementById('error-message').innerHTML = 'Error: No hay datos para exportar';
-                document.getElementById('error-message').style.display = 'block';
-                return;
+            console.log("Ejecutando exportData...");
+            try {
+                if (!currentSignal) {
+                    throw new Error('No hay datos para exportar');
+                }
+                const data = currentSignal.join('\n');
+                const blob = new Blob([data], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'mfsu_noise.txt';
+                a.click();
+                URL.revokeObjectURL(url);
+                document.getElementById('error-message').style.display = 'none';
+            } catch (error) {
+                console.error("Error en exportData:", error);
+                showError(`Error al exportar datos: ${error.message}`);
             }
-
-            const data = currentSignal.join('\n');
-            const blob = new Blob([data], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'mfsu_noise.txt';
-            a.click();
-            URL.revokeObjectURL(url);
         }
     </script>
 </body>
