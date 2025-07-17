@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Ruido 1/f - MFSU Fractal Dynamics</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="fractal-pattern"></div>
+    
+    <div class="container">
+        <header class="header">
+            <h1>Generador de Ruido 1/f - MFSU Fractal Dynamics</h1>
+            <p>Simulación de fluctuaciones estocásticas multiplicativas para sistemas fractales</p>
+        </header>
+
+        <div class="error-message" id="error-message"></div>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generando ruido fractal...</p>
+        </div>
+
+        <div class="equation">
+            <h3>Ecuación MFSU</h3>
+            <div class="equation-display">
+                dψ/dt = α·∇^∂ψ + β·ξ(t)·ψ - γ·ψ³
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="samples">Muestras (N):</label>
+                <input type="number" id="samples" min="512" max="8192" value="2048" step="256">
+            </div>
+            <div class="control-group">
+                <label for="alpha">α (Difusión fractal):</label>
+                <input type="number" id="alpha" min="0.1" max="2.0" value="1.0" step="0.1">
+            </div>
+            <div class="control-group">
+                <label for="beta">β (Acoplamiento ruido):</label>
+                <input type="number" id="beta" min="0.1" max="3.0" value="1.5" step="0.1">
+            </div>
+            <div class="control-group">
+                <label for="gamma">γ (No linealidad):</label>
+                <input type="number" id="gamma" min="0.1" max="2.0" value="0.8" step="0.1">
+            </div>
+            <div class="control-group">
+                <label for="fractal-dim">Dimensión fractal (∂):</label>
+                <input type="number" id="fractal-dim" min="0.5" max="1.5" value="0.921" step="0.001">
+            </div>
+            <div class="control-group">
+                <label for="noise-type">Tipo de ruido:</label>
+                <select id="noise-type">
+                    <option value="pink">Rosa (1/f)</option>
+                    <option value="brown">Marrón (1/f²)</option>
+                    <option value="white">Blanco</option>
+                    <option value="blue">Azul (f)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="share-actions">
+            <button class="button" onclick="generateNoise()">Generar Ruido</button>
+            <button class="button" onclick="playNoise()">Reproducir Audio</button>
+            <button class="button" onclick="downloadData()">Descargar Datos</button>
+            <button class="button" id="shareButton">Compartir</button>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-item">
+                <div class="stat-value" id="stat-mean">0.000</div>
+                <div class="stat-label">Media</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-std">0.000</div>
+                <div class="stat-label">Desviación Estándar</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-fractal">0.921</div>
+                <div class="stat-label">Dimensión Fractal</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-entropy">0.000</div>
+                <div class="stat-label">Entropía</div>
+            </div>
+        </div>
+
+        <div class="visualizations">
+            <div class="chart-container">
+                <h3>Señal Temporal</h3>
+                <canvas id="timeChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Espectro de Potencia</h3>
+                <canvas id="spectrumChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de compartir -->
+    <div id="shareModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Compartir Generador</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <input type="text" id="shareLink" class="share-link" value="https://mfsu-fractal-dynamics.netlify.app" readonly>
+            <div class="share-actions">
+                <button class="button" onclick="copyLink()">Copiar Enlace</button>
+                <button class="button" onclick="shareOnX()">Compartir en X</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="docs/fft.js"></script>
+    <script src="docs/noise-generator.js"></script>
+    <script src="docs/share-modal.js"></script>
+    <script src="docs/main.js"></script>
+</body>
+</html>
