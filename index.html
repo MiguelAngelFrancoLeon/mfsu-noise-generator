@@ -3,793 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Ruido 1/f Espectral Avanzado</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
-            color: #e0e0e0;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(30, 30, 50, 0.95);
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-        h1 {
-            text-align: center;
-            color: #4fc3f7;
-            margin-bottom: 30px;
-        }
-        .controls {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .control-group {
-            background: rgba(20, 20, 40, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid rgba(79, 195, 247, 0.2);
-        }
-        .control-group h3 {
-            color: #81c784;
-            margin: 0 0 15px;
-        }
-        .control-item {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #b0b0b0;
-            font-size: 14px;
-        }
-        input[type="range"] {
-            width: 100%;
-            height: 5px;
-            background: #333;
-            outline: none;
-            border-radius: 5px;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #4fc3f7;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        select {
-            width: 100%;
-            padding: 8px;
-            background: #333;
-            color: #e0e0e0;
-            border: 1px solid #555;
-            border-radius: 5px;
-        }
-        .button {
-            background: linear-gradient(45deg, #4fc3f7, #29b6f6);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            margin: 5px;
-            pointer-events: auto;
-        }
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(79, 195, 247, 0.4);
-        }
-        .visualization {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .plot-container {
-            background: rgba(20, 20, 40, 0.9);
-            border-radius: 10px;
-            padding: 20px;
-            border: 1px solid rgba(79, 195, 247, 0.2);
-        }
-        .plot-title {
-            color: #4fc3f7;
-            text-align: center;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-        canvas {
-            width: 100%;
-            height: 300px;
-            background: #1a1a1a;
-            border-radius: 5px;
-        }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .stat-item {
-            background: rgba(20, 20, 40, 0.8);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid rgba(129, 199, 132, 0.2);
-        }
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #81c784;
-        }
-        .stat-label {
-            font-size: 14px;
-            color: #b0b0b0;
-            margin-top: 5px;
-        }
-        .method-info {
-            background: rgba(20, 20, 40, 0.6);
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            border-left: 4px solid #4fc3f7;
-        }
-        .method-info h4 {
-            color: #4fc3f7;
-            margin: 0;
-        }
-        .warning {
-            background: rgba(255, 152, 0, 0.1);
-            color: #ffb74d;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            border-left: 4px solid #ff9800;
-        }
-        .error {
-            background: rgba(255, 82, 82, 0.1);
-            color: #ff5252;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            border-left: 4px solid #ff5252;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background: #1e1e32;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-        }
-        .modal-content h2 {
-            color: #4fc3f7;
-            margin-bottom: 20px;
-        }
-        .modal-content button {
-            background: #4fc3f7;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin: 5px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .modal-content button:hover {
-            background: #29b6f6;
-        }
-        .modal-content input {
-            width: 80%;
-            padding: 8px;
-            margin: 10px 0;
-            background: #333;
-            color: #e0e0e0;
-            border: 1px solid #555;
-            border-radius: 5px;
-        }
-        @media (max-width: 768px) {
-            .visualization { grid-template-columns: 1fr; }
-            .controls { grid-template-columns: 1fr; }
-        }
-    </style>
+    <title>Generador de Ruido 1/f - MFSU Fractal Dynamics</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="fractal-pattern"></div>
+    
     <div class="container">
-        <h1>🌌 Generador de Ruido 1/f Espectral Avanzado</h1>
-        
+        <header class="header">
+            <h1>Generador de Ruido 1/f - MFSU Fractal Dynamics</h1>
+            <p>Simulación de fluctuaciones estocásticas multiplicativas para sistemas fractales</p>
+        </header>
+
+        <div class="error-message" id="error-message"></div>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generando ruido fractal...</p>
+        </div>
+
+        <div class="equation">
+            <h3>Ecuación MFSU</h3>
+            <div class="equation-display">
+                dψ/dt = α·∇^∂ψ + β·ξ(t)·ψ - γ·ψ³
+            </div>
+        </div>
+
         <div class="controls">
             <div class="control-group">
-                <h3>Parámetros Espectrales</h3>
-                <div class="control-item">
-                    <label>Exponente Espectral (α): <span id="alphaValue">1.842</span></label>
-                    <input type="range" id="alphaSlider" min="0.5" max="2.5" step="0.01" value="1.842">
-                </div>
-                <div class="control-item">
-                    <label>Longitud de Muestra: <span id="lengthValue">1024</span></label>
-                    <input type="range" id="lengthSlider" min="512" max="4096" step="256" value="1024">
-                </div>
-                <div class="control-item">
-                    <label>Frecuencia de Muestreo (Hz): <span id="fsValue">1000</span></label>
-                    <input type="range" id="fsSlider" min="100" max="10000" step="100" value="1000">
-                </div>
+                <label for="samples">Muestras (N):</label>
+                <input type="number" id="samples" min="512" max="8192" value="2048" step="256">
             </div>
-            
             <div class="control-group">
-                <h3>Método de Generación</h3>
-                <div class="control-item">
-                    <label>Algoritmo:</label>
-                    <select id="methodSelect">
-                        <option value="timmer">Timmer-Koenig</option>
-                        <option value="spectral">Método Espectral FFT</option>
-                    </select>
-                </div>
-                <div class="control-item">
-                    <label>Ventana Espectral:</label>
-                    <select id="windowSelect">
-                        <option value="hann">Hann</option>
-                        <option value="hamming">Hamming</option>
-                        <option value="blackman">Blackman</option>
-                        <option value="none">Sin Ventana</option>
-                    </select>
-                </div>
+                <label for="alpha">α (Difusión fractal):</label>
+                <input type="number" id="alpha" min="0.1" max="2.0" value="1.0" step="0.1">
             </div>
-            
             <div class="control-group">
-                <h3>Filtros Anti-Artefactos</h3>
-                <div class="control-item">
-                    <label>Filtro Pasa-Bajas (Hz): <span id="lowpassValue">500</span></label>
-                    <input type="range" id="lowpassSlider" min="50" max="1000" step="10" value="500">
-                </div>
-                <div class="control-item">
-                    <label>Filtro Pasa-Altas (Hz): <span id="highpassValue">1</span></label>
-                    <input type="range" id="highpassSlider" min="0.1" max="10" step="0.1" value="1">
-                </div>
-                <div class="control-item">
-                    <label>Suavizado Espectral:</label>
-                    <select id="smoothingSelect">
-                        <option value="savgol">Savitzky-Golay</option>
-                        <option value="none">Sin Suavizado</option>
-                        <option value="moving">Media Móvil</option>
-                        <option value="gaussian">Gaussiano</option>
-                    </select>
-                </div>
+                <label for="beta">β (Acoplamiento ruido):</label>
+                <input type="number" id="beta" min="0.1" max="3.0" value="1.5" step="0.1">
+            </div>
+            <div class="control-group">
+                <label for="gamma">γ (No linealidad):</label>
+                <input type="number" id="gamma" min="0.1" max="2.0" value="0.8" step="0.1">
+            </div>
+            <div class="control-group">
+                <label for="fractal-dim">Dimensión fractal (∂):</label>
+                <input type="number" id="fractal-dim" min="0.5" max="1.5" value="0.921" step="0.001">
+            </div>
+            <div class="control-group">
+                <label for="noise-type">Tipo de ruido:</label>
+                <select id="noise-type">
+                    <option value="pink">Rosa (1/f)</option>
+                    <option value="brown">Marrón (1/f²)</option>
+                    <option value="white">Blanco</option>
+                    <option value="blue">Azul (f)</option>
+                </select>
             </div>
         </div>
-        
-        <div style="text-align: center;">
-            <button class="button" id="generateButton">Generar Ruido 1/f</button>
-            <button class="button" id="analyzeButton">Analizar Espectro</button>
-            <button class="button" id="exportButton">Exportar Datos</button>
+
+        <div class="share-actions">
+            <button class="button" onclick="generateNoise()">Generar Ruido</button>
+            <button class="button" onclick="playNoise()">Reproducir Audio</button>
+            <button class="button" onclick="downloadData()">Descargar Datos</button>
             <button class="button" id="shareButton">Compartir</button>
         </div>
-        
-        <div class="visualization">
-            <div class="plot-container">
-                <div class="plot-title">Señal Temporal</div>
-                <canvas id="timeCanvas"></canvas>
-            </div>
-            <div class="plot-container">
-                <div class="plot-title">Espectro de Potencia</div>
-                <canvas id="spectrumCanvas"></canvas>
-            </div>
-        </div>
-        
-        <div class="stats">
+
+        <div class="stats" id="stats" style="display: none;">
             <div class="stat-item">
-                <div class="stat-value" id="slopeValue">-</div>
-                <div class="stat-label">Pendiente Espectral</div>
+                <div class="stat-value" id="stat-mean">0.000</div>
+                <div class="stat-label">Media</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value" id="correlationValue">-</div>
-                <div class="stat-label">Correlación R²</div>
+                <div class="stat-value" id="stat-std">0.000</div>
+                <div class="stat-label">Desviación Estándar</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value" id="fractalValue">-</div>
+                <div class="stat-value" id="stat-fractal">0.921</div>
                 <div class="stat-label">Dimensión Fractal</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value" id="hurstValue">-</div>
-                <div class="stat-label">Exponente Hurst</div>
+                <div class="stat-value" id="stat-entropy">0.000</div>
+                <div class="stat-label">Entropía</div>
             </div>
         </div>
-        
-        <div class="method-info">
-            <h4>Conexión con MFSU</h4>
-            <p>Genera ruido 1/f con \(\alpha \approx 1.842\), compatible con el MFSU (\(\partial \approx 0.921\)) para simular CMB, vórtices, y EEG. Usa Timmer-Koenig con Savitzky-Golay. Ver <a href="https://github.com/MiguelAngelFrancoLeon/MFSU-Fractal-Dynamics">repositorio</a>.</p>
-        </div>
-        
-        <div class="warning">
-            <strong>Nota:</strong> Usa \(\alpha=1.842\) y Timmer-Koenig para coincidir con el espectro del CMB (\(\partial \approx 0.921\)).
-        </div>
-        
-        <div id="error-message" class="error" style="display: none;"></div>
-        
-        <!-- Modal para compartir -->
-        <div id="shareModal" class="modal">
-            <div class="modal-content">
-                <h2>Comparte el Generador de Ruido 1/f</h2>
-                <input type="text" id="shareLink" value="https://miguelangelfrancoleon.github.io/MFSU-Fractal-Dynamics/mfsu_noise_generator.html" readonly>
-                <button onclick="copyLink()">Copiar Enlace</button>
-                <button onclick="shareOnX()">Compartir en X</button>
-                <button onclick="closeModal()">Cerrar</button>
+
+        <div class="visualizations">
+            <div class="chart-container">
+                <h3>Señal Temporal</h3>
+                <canvas id="timeChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Espectro de Potencia</h3>
+                <canvas id="spectrumChart"></canvas>
             </div>
         </div>
     </div>
 
-    <script src="fft.min.js"></script>
-    <script src="share-modal.js"></script>
-    <script>
-        console.log("Script principal cargado.");
+    <!-- Modal de compartir -->
+    <div id="shareModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Compartir Generador</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <input type="text" id="shareLink" class="share-link" value="https://mfsu-fractal-dynamics.netlify.app" readonly>
+            <div class="share-actions">
+                <button class="button" onclick="copyLink()">Copiar Enlace</button>
+                <button class="button" onclick="shareOnX()">Compartir en X</button>
+            </div>
+        </div>
+    </div>
 
-        // Verificar fft.js
-        if (typeof FFT === 'undefined') {
-            document.getElementById('error-message').innerHTML = 'Error: No se pudo cargar fft.js. Asegúrate de que fft.min.js esté en la carpeta docs/.';
-            document.getElementById('error-message').style.display = 'block';
-            throw new Error('FFT no definido');
-        } else {
-            console.log("FFT.js cargado correctamente.");
-        }
-
-        let currentSignal = null;
-        let currentSpectrum = null;
-        let timeCanvas, spectrumCanvas;
-        let timeCtx, spectrumCtx;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOMContentLoaded ejecutado.");
-            try {
-                initializeCanvases();
-                setupEventListeners();
-                generateNoise();
-            } catch (error) {
-                console.error("Error en DOMContentLoaded:", error);
-                showError(`Error inicializando: ${error.message}`);
-            }
-        });
-
-        function showError(message) {
-            const errorDiv = document.getElementById('error-message');
-            errorDiv.innerHTML = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function initializeCanvases() {
-            console.log("Inicializando canvases...");
-            timeCanvas = document.getElementById('timeCanvas');
-            spectrumCanvas = document.getElementById('spectrumCanvas');
-            if (!timeCanvas || !spectrumCanvas) {
-                throw new Error('Canvas no encontrados');
-            }
-            timeCtx = timeCanvas.getContext('2d');
-            spectrumCtx = spectrumCanvas.getContext('2d');
-            resizeCanvases();
-        }
-
-        function resizeCanvases() {
-            const rect = timeCanvas.getBoundingClientRect();
-            timeCanvas.width = rect.width * window.devicePixelRatio;
-            timeCanvas.height = rect.height * window.devicePixelRatio;
-            spectrumCanvas.width = rect.width * window.devicePixelRatio;
-            spectrumCanvas.height = rect.height * window.devicePixelRatio;
-            timeCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
-            spectrumCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        }
-
-        function setupEventListeners() {
-            console.log("Configurando event listeners...");
-            ['alphaSlider', 'lengthSlider', 'fsSlider', 'lowpassSlider', 'highpassSlider'].forEach(id => {
-                const slider = document.getElementById(id);
-                if (slider) {
-                    slider.oninput = function() {
-                        document.getElementById(id.replace('Slider', 'Value')).textContent = this.value;
-                    };
-                } else {
-                    console.warn(`Slider ${id} no encontrado`);
-                }
-            });
-
-            const buttons = [
-                { id: 'generateButton', handler: generateNoise, name: 'Generar Ruido' },
-                { id: 'analyzeButton', handler: analyzeSpectrum, name: 'Analizar Espectro' },
-                { id: 'exportButton', handler: exportData, name: 'Exportar Datos' },
-                { id: 'shareButton', handler: openShareModal, name: 'Compartir' }
-            ];
-            buttons.forEach(({ id, handler, name }) => {
-                const button = document.getElementById(id);
-                if (button) {
-                    button.addEventListener('click', () => {
-                        console.log(`Clic en ${name}`);
-                        handler();
-                    });
-                } else {
-                    console.error(`Botón ${id} no encontrado`);
-                }
-            });
-
-            window.addEventListener('resize', resizeCanvases);
-        }
-
-        function generateNoise() {
-            console.log("Ejecutando generateNoise...");
-            try {
-                const alpha = parseFloat(document.getElementById('alphaSlider').value);
-                const N = parseInt(document.getElementById('lengthSlider').value);
-                const fs = parseFloat(document.getElementById('fsSlider').value);
-                const method = document.getElementById('methodSelect').value;
-                const windowType = document.getElementById('windowSelect').value;
-                const smoothing = document.getElementById('smoothingSelect').value;
-
-                console.log(`Parámetros: alpha=${alpha}, N=${N}, fs=${fs}, method=${method}`);
-
-                let signal;
-                switch(method) {
-                    case 'spectral':
-                        signal = generateSpectralNoise(N, alpha, fs);
-                        break;
-                    case 'timmer':
-                        signal = generateTimmerNoise(N, alpha, fs);
-                        break;
-                    default:
-                        throw new Error('Método no soportado: ' + method);
-                }
-
-                if (windowType !== 'none') signal = applyWindow(signal, windowType);
-                signal = applyFilters(signal, fs);
-                if (smoothing !== 'none') signal = applySmoothing(signal, smoothing);
-
-                currentSignal = signal;
-                plotTimeSeries(signal, fs);
-                analyzeSpectrum();
-                document.getElementById('error-message').style.display = 'none';
-            } catch (error) {
-                console.error("Error en generateNoise:", error);
-                showError(`Error al generar ruido: ${error.message}`);
-            }
-        }
-
-        function generateSpectralNoise(N, alpha, fs) {
-            console.log("Generando ruido espectral...");
-            const fft = new FFT(N);
-            const freqs = new Array(N/2).fill(0).map((_, i) => i * fs / N);
-            const spectrum = new Array(N).fill(0);
-            spectrum[0] = 0;
-            for (let i = 1; i < N/2; i++) {
-                spectrum[i] = freqs[i] > 0 ? Math.pow(freqs[i], -alpha/2) : 0;
-            }
-            for (let i = N/2; i < N; i++) {
-                spectrum[i] = spectrum[N - i];
-            }
-
-            const complexSignal = new Array(N).fill(0).map((_, i) => {
-                const phase = Math.random() * 2 * Math.PI;
-                return [spectrum[i] * Math.cos(phase), spectrum[i] * Math.sin(phase)];
-            });
-
-            const out = fft.createComplexArray();
-            fft.fromComplexArray(complexSignal, out);
-            fft.inverseTransform(out, out);
-
-            const signal = new Array(N).fill(0).map((_, i) => out[2*i]);
-            return normalizeSignal(signal);
-        }
-
-        function generateTimmerNoise(N, alpha, fs) {
-            console.log("Generando ruido Timmer-Koenig...");
-            const fft = new FFT(N);
-            const freqs = new Array(N/2).fill(0).map((_, i) => i * fs / N);
-            const spectrum = new Array(N).fill(0);
-            for (let i = 1; i < N/2; i++) {
-                const power = freqs[i] > 0 ? Math.pow(freqs[i], -alpha/2) : 0;
-                const sigma = Math.sqrt(power / 2);
-                spectrum[i] = gaussianRandom() * sigma;
-                spectrum[N-i] = gaussianRandom() * sigma;
-            }
-
-            const complexSignal = new Array(N).fill(0).map((_, i) => [spectrum[i], 0]);
-            const out = fft.createComplexArray();
-            fft.fromComplexArray(complexSignal, out);
-            fft.inverseTransform(out, out);
-
-            const signal = new Array(N).fill(0).map((_, i) => out[2*i]);
-            return normalizeSignal(signal);
-        }
-
-        function applyWindow(signal, windowType) {
-            const N = signal.length;
-            return signal.map((val, i) => {
-                const n = i / (N - 1);
-                switch(windowType) {
-                    case 'hann':
-                        return val * (0.5 - 0.5 * Math.cos(2 * Math.PI * n));
-                    case 'hamming':
-                        return val * (0.54 - 0.46 * Math.cos(2 * Math.PI * n));
-                    case 'blackman':
-                        return val * (0.42 - 0.5 * Math.cos(2 * Math.PI * n) + 0.08 * Math.cos(4 * Math.PI * n));
-                    default:
-                        return val;
-                }
-            });
-        }
-
-        function applyFilters(signal, fs) {
-            const lowpass = parseFloat(document.getElementById('lowpassSlider').value);
-            const highpass = parseFloat(document.getElementById('highpassSlider').value);
-            let filtered = signal.slice();
-            if (lowpass < fs/2) filtered = butterworthFilter(filtered, lowpass, fs, 'low');
-            if (highpass > 0) filtered = butterworthFilter(filtered, highpass, fs, 'high');
-            return filtered;
-        }
-
-        function applySmoothing(signal, smoothingType) {
-            switch(smoothingType) {
-                case 'moving':
-                    return movingAverage(signal, 5);
-                case 'gaussian':
-                    return gaussianSmooth(signal, 2.0);
-                case 'savgol':
-                    return savitzkyGolay(signal, 5, 2);
-                default:
-                    return signal;
-            }
-        }
-
-        function gaussianRandom() {
-            let u = 0, v = 0;
-            while (u === 0) u = Math.random();
-            while (v === 0) v = Math.random();
-            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-        }
-
-        function normalizeSignal(signal) {
-            const mean = signal.reduce((a, b) => a + b, 0) / signal.length;
-            const std = Math.sqrt(signal.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / signal.length);
-            return signal.map(x => std > 0 ? (x - mean) / std : x);
-        }
-
-        function movingAverage(signal, windowSize) {
-            const N = signal.length;
-            const smoothed = new Array(N);
-            const halfWindow = Math.floor(windowSize / 2);
-            for (let i = 0; i < N; i++) {
-                let sum = 0, count = 0;
-                for (let j = Math.max(0, i - halfWindow); j <= Math.min(N - 1, i + halfWindow); j++) {
-                    sum += signal[j];
-                    count++;
-                }
-                smoothed[i] = sum / count;
-            }
-            return smoothed;
-        }
-
-        function gaussianSmooth(signal, sigma) {
-            const N = signal.length;
-            const smoothed = new Array(N);
-            const kernelSize = Math.ceil(6 * sigma);
-            for (let i = 0; i < N; i++) {
-                let sum = 0, weightSum = 0;
-                for (let j = Math.max(0, i - kernelSize); j <= Math.min(N - 1, i + kernelSize); j++) {
-                    const weight = Math.exp(-0.5 * Math.pow((i - j) / sigma, 2));
-                    sum += signal[j] * weight;
-                    weightSum += weight;
-                }
-                smoothed[i] = sum / weightSum;
-            }
-            return smoothed;
-        }
-
-        function savitzkyGolay(signal, windowSize, order) {
-            return movingAverage(signal, windowSize);
-        }
-
-        function butterworthFilter(signal, cutoff, fs, type) {
-            const alpha = Math.exp(-2 * Math.PI * cutoff / fs);
-            const filtered = new Array(signal.length);
-            filtered[0] = signal[0];
-            for (let i = 1; i < signal.length; i++) {
-                if (type === 'low') {
-                    filtered[i] = alpha * filtered[i-1] + (1 - alpha) * signal[i];
-                } else {
-                    filtered[i] = alpha * filtered[i-1] + signal[i] - signal[i-1];
-                }
-            }
-            return filtered;
-        }
-
-        function plotTimeSeries(signal, fs) {
-            console.log("Dibujando señal temporal...");
-            try {
-                const ctx = timeCtx;
-                const width = timeCanvas.width / window.devicePixelRatio;
-                const height = timeCanvas.height / window.devicePixelRatio;
-                ctx.clearRect(0, 0, width, height);
-                ctx.strokeStyle = '#4fc3f7';
-                ctx.lineWidth = 1;
-
-                const minVal = Math.min(...signal);
-                const maxVal = Math.max(...signal);
-                const range = maxVal - minVal || 1;
-
-                ctx.beginPath();
-                for (let i = 0; i < signal.length; i++) {
-                    const x = (i / signal.length) * width;
-                    const y = height - ((signal[i] - minVal) / range) * (height * 0.8) - (height * 0.1);
-                    if (i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-                ctx.stroke();
-
-                ctx.strokeStyle = '#666';
-                ctx.beginPath();
-                ctx.moveTo(0, height/2);
-                ctx.lineTo(width, height/2);
-                ctx.stroke();
-            } catch (error) {
-                console.error("Error en plotTimeSeries:", error);
-                showError(`Error dibujando señal: ${error.message}`);
-            }
-        }
-
-        function analyzeSpectrum() {
-            console.log("Ejecutando analyzeSpectrum...");
-            try {
-                if (!currentSignal) {
-                    throw new Error('No se ha generado ninguna señal');
-                }
-
-                const N = currentSignal.length;
-                const fs = parseFloat(document.getElementById('fsSlider').value);
-                const fft = new FFT(N);
-                const complex = fft.createComplexArray();
-                fft.toComplexArray(currentSignal, complex);
-                fft.transform(complex, complex);
-
-                const spectrum = new Array(N/2).fill(0).map((_, i) => {
-                    const real = complex[2*i];
-                    const imag = complex[2*i + 1];
-                    return (real * real + imag * imag) / N;
-                });
-                const freqs = new Array(N/2).fill(0).map((_, i) => i * fs / N);
-
-                currentSpectrum = { freqs, spectrum };
-                plotSpectrum(freqs, spectrum);
-                calculateStats(freqs, spectrum);
-                document.getElementById('error-message').style.display = 'none';
-            } catch (error) {
-                console.error("Error en analyzeSpectrum:", error);
-                showError(`Error al analizar espectro: ${error.message}`);
-            }
-        }
-
-        function plotSpectrum(freqs, spectrum) {
-            console.log("Dibujando espectro...");
-            try {
-                const ctx = spectrumCtx;
-                const width = spectrumCanvas.width / window.devicePixelRatio;
-                const height = spectrumCanvas.height / window.devicePixelRatio;
-                ctx.clearRect(0, 0, width, height);
-
-                const logFreqs = freqs.map(f => Math.log10(f + 1e-10)).filter(f => isFinite(f));
-                const logSpectrum = spectrum.map(s => Math.log10(s + 1e-10)).filter(s => isFinite(s));
-
-                if (logFreqs.length < 2) {
-                    throw new Error('Datos insuficientes para el espectro');
-                }
-
-                const minLogFreq = Math.min(...logFreqs);
-                const maxLogFreq = Math.max(...logFreqs);
-                const minLogSpec = Math.min(...logSpectrum);
-                const maxLogSpec = Math.max(...logSpectrum);
-
-                ctx.strokeStyle = '#81c784';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                for (let i = 1; i < logFreqs.length; i++) {
-                    const x = ((logFreqs[i] - minLogFreq) / (maxLogFreq - minLogFreq)) * width;
-                    const y = height - ((logSpectrum[i] - minLogSpec) / (maxLogSpec - minLogSpec)) * (height * 0.8) - (height * 0.1);
-                    if (i === 1) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-                ctx.stroke();
-
-                ctx.strokeStyle = '#666';
-                ctx.beginPath();
-                ctx.moveTo(0, height/2);
-                ctx.lineTo(width, height/2);
-                ctx.stroke();
-            } catch (error) {
-                console.error("Error en plotSpectrum:", error);
-                showError(`Error dibujando espectro: ${error.message}`);
-            }
-        }
-
-        function calculateStats(freqs, spectrum) {
-            console.log("Calculando estadísticas...");
-            try {
-                const logFreqs = freqs.map(f => Math.log10(f + 1e-10)).filter(f => isFinite(f));
-                const logSpectrum = spectrum.map(s => Math.log10(s + 1e-10)).filter(s => isFinite(s));
-
-                if (logFreqs.length < 2) {
-                    document.getElementById('slopeValue').textContent = 'N/A';
-                    document.getElementById('correlationValue').textContent = 'N/A';
-                    document.getElementById('fractalValue').textContent = 'N/A';
-                    document.getElementById('hurstValue').textContent = 'N/A';
-                    return;
-                }
-
-                const n = logFreqs.length;
-                const meanX = logFreqs.reduce((a, b) => a + b, 0) / n;
-                const meanY = logSpectrum.reduce((a, b) => a + b, 0) / n;
-                let sumXY = 0, sumXX = 0;
-                for (let i = 0; i < n; i++) {
-                    sumXY += (logFreqs[i] - meanX) * (logSpectrum[i] - meanY);
-                    sumXX += (logFreqs[i] - meanX) ** 2;
-                }
-                const slope = sumXY / sumXX;
-                const intercept = meanY - slope * meanX;
-
-                let ssTot = 0, ssRes = 0;
-                for (let i = 0; i < n; i++) {
-                    const yPred = slope * logFreqs[i] + intercept;
-                    ssTot += (logSpectrum[i] - meanY) ** 2;
-                    ssRes += (logSpectrum[i] - yPred) ** 2;
-                }
-                const r2 = 1 - ssRes / ssTot;
-
-                const hurst = (2 - Math.abs(slope)) / 2;
-                const fractalDim = 2 - hurst;
-
-                document.getElementById('slopeValue').textContent = slope.toFixed(3);
-                document.getElementById('correlationValue').textContent = r2.toFixed(3);
-                document.getElementById('fractalValue').textContent = fractalDim.toFixed(3);
-                document.getElementById('hurstValue').textContent = hurst.toFixed(3);
-            } catch (error) {
-                console.error("Error en calculateStats:", error);
-                showError(`Error calculando estadísticas: ${error.message}`);
-            }
-        }
-
-        function exportData() {
-            console.log("Ejecutando exportData...");
-            try {
-                if (!currentSignal) {
-                    throw new Error('No hay datos para exportar');
-                }
-                const data = currentSignal.join('\n');
-                const blob = new Blob([data], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'mfsu_noise.txt';
-                a.click();
-                URL.revokeObjectURL(url);
-                document.getElementById('error-message').style.display = 'none';
-            } catch (error) {
-                console.error("Error en exportData:", error);
-                showError(`Error al exportar datos: ${error.message}`);
-            }
-        }
-    </script>
+    <!-- Scripts -->
+    <script src="docs/fft.js"></script>
+    <script src="docs/noise-generator.js"></script>
+    <script src="docs/share-modal.js"></script>
+    <script src="docs/main.js"></script>
 </body>
 </html>
