@@ -1,60 +1,122 @@
-// docs/share-modal.js
-console.log("Cargando share-modal.js...");
+// Funciones para el modal de compartir
 
 function openShareModal() {
-    console.log("Abriendo modal de compartir...");
     const modal = document.getElementById('shareModal');
-    if (modal) {
-        modal.style.display = 'flex';
-    } else {
-        console.error("Modal shareModal no encontrado");
-        document.getElementById('error-message').innerHTML = 'Error: Modal de compartir no encontrado';
-        document.getElementById('error-message').style.display = 'block';
-    }
+    modal.style.display = 'block';
+    
+    // Generar enlace con parámetros actuales
+    const params = getParameters();
+    const url = generateShareUrl(params);
+    document.getElementById('shareLink').value = url;
+    
+    // Animación de aparición
+    setTimeout(() => {
+        modal.querySelector('.modal-content').style.transform = 'scale(1)';
+        modal.querySelector('.modal-content').style.opacity = '1';
+    }, 10);
 }
 
 function closeModal() {
-    console.log("Cerrando modal...");
     const modal = document.getElementById('shareModal');
-    if (modal) {
+    const content = modal.querySelector('.modal-content');
+    
+    // Animación de salida
+    content.style.transform = 'scale(0.8)';
+    content.style.opacity = '0';
+    
+    setTimeout(() => {
         modal.style.display = 'none';
-    }
+    }, 300);
+}
+
+function generateShareUrl(params) {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const urlParams = new URLSearchParams({
+        samples: params.samples,
+        alpha: params.alpha,
+        beta: params.beta,
+        gamma: params.gamma,
+        fractalDim: params.fractalDim,
+        noiseType: params.noiseType
+    });
+    
+    return `${baseUrl}?${urlParams.toString()}`;
 }
 
 function copyLink() {
-    console.log("Copiando enlace...");
     const shareLink = document.getElementById('shareLink');
-    if (shareLink) {
-        shareLink.select();
+    shareLink.select();
+    shareLink.setSelectionRange(0, 99999); // Para móviles
+    
+    try {
         document.execCommand('copy');
-        alert('Enlace copiado al portapapeles');
-    } else {
-        console.error("Input shareLink no encontrado");
-        document.getElementById('error-message').innerHTML = 'Error: Input de enlace no encontrado';
-        document.getElementById('error-message').style.display = 'block';
+        showCopyFeedback();
+    } catch (err) {
+        // Fallback para navegadores modernos
+        navigator.clipboard.writeText(shareLink.value).then(() => {
+            showCopyFeedback();
+        }).catch(() => {
+            showError('No se pudo copiar el enlace');
+        });
     }
+}
+
+function showCopyFeedback() {
+    const button = document.querySelector('.share-actions button');
+    const originalText = button.textContent;
+    
+    button.textContent = '¡Copiado!';
+    button.style.background = 'linear-gradient(45deg, #4ecdc4, #45b7d1)';
+    
+    setTimeout(() => {
+        button.textContent = originalText;
+        button.style.background = '';
+    }, 2000);
 }
 
 function shareOnX() {
-    console.log("Compartiendo en X...");
-    const shareLink = document.getElementById('shareLink');
-    if (shareLink) {
-        const url = encodeURIComponent(shareLink.value);
-        const text = encodeURIComponent('¡Mira este Generador de Ruido 1/f para el MFSU-Fractal-Dynamics!');
-        window.open(`https://x.com/intent/tweet?url=${url}&text=${text}`, '_blank');
-    } else {
-        console.error("Input shareLink no encontrado");
-        document.getElementById('error-message').innerHTML = 'Error: Input de enlace no encontrado';
-        document.getElementById('error-message').style.display = 'block';
-    }
+    const shareLink = document.getElementById('shareLink').value;
+    const text = 'Generador de Ruido 1/f - MFSU Fractal Dynamics: Simulación de fluctuaciones estocásticas multiplicativas';
+    const hashtags = 'fractal,noise,mathematics,MFSU,dynamics';
+    
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareLink)}&hashtags=${hashtags}`;
+    
+    window.open(twitterUrl, '_blank', 'width=600,height=400');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("Configurando share-modal.js...");
-    const shareButton = document.getElementById('shareButton');
-    if (shareButton) {
-        shareButton.addEventListener('click', openShareModal);
-    } else {
-        console.warn("Botón shareButton no encontrado");
+// Cargar parámetros desde URL al cargar la página
+function loadParametersFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    const paramMap = {
+        samples: 'samples',
+        alpha: 'alpha',
+        beta: 'beta',
+        gamma: 'gamma',
+        fractalDim: 'fractal-dim',
+        noiseType: 'noise-type'
+    };
+    
+    Object.entries(paramMap).forEach(([urlParam, elementId]) => {
+        const value = urlParams.get(urlParam);
+        if (value) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.value = value;
+            }
+        }
+    });
+}
+
+// Cerrar modal al hacer clic fuera
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('shareModal');
+    if (event.target === modal) {
+        closeModal();
     }
+});
+
+// Cargar parámetros al inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    loadParametersFromUrl();
 });
