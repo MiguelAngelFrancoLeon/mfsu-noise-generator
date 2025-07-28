@@ -125,7 +125,10 @@ Please ensure code is well-documented and tests are added if applicable.
 
 ## License
 
-Released under the [MIT License](LICENSE). Free for scientific, educational, and artistic use with attribution to Miguel Ángel Franco León.
+This repository and all its contents (text, figures, data, and simulations) are licensed under the [Creative Commons Attribution 4.0 International License (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
+
+You are free to use, share, and adapt the material, provided you give appropriate credit to the author: **Miguel Ángel Franco León**.
+
 
 ## Acknowledgments
 
